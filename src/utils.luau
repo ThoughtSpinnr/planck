@@ -53,34 +53,39 @@ end
 
 local EVENT_CONNECT_METHODS = { "Connect", "On", "on", "connect" }
 
-export type EventLike = RBXScriptSignal | {
-	connect: (self: EventLike, ...any) -> any,
+export type ConnectionLike = RBXScriptConnection | {
+	disconnect: (self: ConnectionLike) -> any,
 	[any]: any,
 } | {
-	Connect: (self: EventLike, ...any) -> any,
+	Disconnect: (self: ConnectionLike) -> any,
 	[any]: any,
 } | {
-	on: (self: EventLike, ...any) -> any,
+	destroy: (self: ConnectionLike) -> any,
 	[any]: any,
-}
+} | {
+	Destroy: (self: ConnectionLike) -> any,
+	[any]: any,
+} | ((...any) -> any)
 
 export type EventInstance = Instance | {
-	[any]: EventLike,
+	[any]: EventLike<unknown>,
 }
 
-export type ConnectionLike = RBXScriptConnection | {
-	disconnect: (self: ConnectionLike, ...any) -> any,
+export type EventLikeConnectFn<T, U...> = (
+	self: T,
+	callback: (U...) -> ()
+) -> ConnectionLike
+
+export type EventLike<T...> = RBXScriptSignal<T...> | {
+	connect: EventLikeConnectFn<EventLike<T...>, T...>,
 	[any]: any,
 } | {
-	Disconnect: (self: ConnectionLike, ...any) -> any,
+	Connect: EventLikeConnectFn<EventLike<T...>, T...>,
 	[any]: any,
 } | {
-	destroy: (self: ConnectionLike, ...any) -> any,
+	on: EventLikeConnectFn<EventLike<T...>, T...>,
 	[any]: any,
-} | {
-	Destroy: (self: ConnectionLike, ...any) -> any,
-	[any]: any,
-} | (...any) -> any
+}
 
 export type ConnectFn<U...> = (callback: (U...) -> ()) -> ConnectionLike
 
@@ -111,8 +116,8 @@ end
 -- License: Copyright (c) 2021 Eryn L. K., MIT License
 -- Source: https://github.com/matter-ecs/matter/blob/main/lib/hooks/useEvent.luau
 local function getConnectFunction<U...>(
-	instance: EventInstance | EventLike,
-	event: string | EventLike
+	instance: EventInstance | EventLike<U...>,
+	event: string? | EventLike<U...>?
 ): ConnectFn<U...>?
 	local eventInstance = instance
 

@@ -1,7 +1,7 @@
 local utils = require("@Project/utils")
 local getConnectFunction = utils.getConnectFunction
 
-type EventLike = utils.EventLike
+type EventLike<U...> = utils.EventLike<U...>
 type EventInstance = utils.EventInstance
 type ConnectionLike = utils.ConnectionLike
 
@@ -67,8 +67,8 @@ end
 --- Checks for any new events and allows for the collection of
 --- those events.
 local function onEvent<U...>(
-	instance: EventInstance | EventLike,
-	event: string | EventLike
+	instance: EventInstance | EventLike<U...>,
+	event: string? | EventLike<U...>?
 ): (Condition, CollectEvents<U...>, () -> () -> ())
 	local connect = getConnectFunction(instance, event)
 	assert(connect, "Event passed to .onEvent is not valid")
