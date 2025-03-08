@@ -53,34 +53,35 @@ end
 
 local EVENT_CONNECT_METHODS = { "Connect", "On", "on", "connect" }
 
-export type EventLike = RBXScriptSignal | {
-	connect: (self: EventLike, ...any) -> any,
-	[any]: any,
-} | {
-	Connect: (self: EventLike, ...any) -> any,
-	[any]: any,
-} | {
-	on: (self: EventLike, ...any) -> any,
-	[any]: any,
-}
-
-export type EventInstance = Instance | {
-	[any]: EventLike,
-}
-
 export type ConnectionLike = RBXScriptConnection | {
-	disconnect: (self: ConnectionLike, ...any) -> any,
+	disconnect: (self: ConnectionLike) -> any,
 	[any]: any,
 } | {
-	Disconnect: (self: ConnectionLike, ...any) -> any,
+	Disconnect: (self: ConnectionLike) -> any,
 	[any]: any,
 } | {
-	destroy: (self: ConnectionLike, ...any) -> any,
+	destroy: (self: ConnectionLike) -> any,
 	[any]: any,
 } | {
-	Destroy: (self: ConnectionLike, ...any) -> any,
+	Destroy: (self: ConnectionLike) -> any,
 	[any]: any,
-} | (...any) -> any
+} | ((...any) -> any)
+
+export type EventLikeConnectFn<T, U...> = (
+	self: T,
+	callback: (U...) -> ()
+) -> ConnectionLike
+
+export type EventLike<T...> = RBXScriptSignal<T...> | {
+	connect: EventLikeConnectFn<EventLike<T...>, T...>,
+	[any]: any,
+} | {
+	Connect: EventLikeConnectFn<EventLike<T...>, T...>,
+	[any]: any,
+} | {
+	on: EventLikeConnectFn<EventLike<T...>, T...>,
+	[any]: any,
+}
 
 export type ConnectFn<U...> = (callback: (U...) -> ()) -> ConnectionLike
 
@@ -110,21 +111,10 @@ end
 -- This function is inspired by useEvent in Matter, a library by evaera (https://github.com/evaera)
 -- License: Copyright (c) 2021 Eryn L. K., MIT License
 -- Source: https://github.com/matter-ecs/matter/blob/main/lib/hooks/useEvent.luau
-local function getConnectFunction<U...>(
-	instance: EventInstance | EventLike,
-	event: string | EventLike
-): ConnectFn<U...>?
-	local eventInstance = instance
+local function getConnectFunction<U...>(event: EventLike<U...>): ConnectFn<U...>?
+	local eventInstance = event
 
-	if typeof(event) == "RBXScriptSignal" or type(event) == "table" then
-		eventInstance = event
-	elseif type(event) == "string" then
-		eventInstance = (instance :: any)[event]
-	end
-
-	if type(eventInstance) == "function" then
-		return eventInstance
-	elseif typeof(eventInstance) == "RBXScriptSignal" then
+	if typeof(eventInstance) == "RBXScriptSignal" then
 		return function(callback)
 			return eventInstance:Connect(callback)
 		end
@@ -145,8 +135,8 @@ local function getConnectFunction<U...>(
 	return nil
 end
 
-local function isValidEvent(instance, event)
-	return getConnectFunction(instance, event) ~= nil
+local function isValidEvent(event)
+	return getConnectFunction(event) ~= nil
 end
 
 return {

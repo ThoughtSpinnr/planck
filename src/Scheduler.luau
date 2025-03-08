@@ -403,7 +403,7 @@ function Scheduler:insert(dependency, instance, event)
 		dependencyGraph:insertBefore(dependency, self._defaultPhase)
 	else
 		assert(
-			isValidEvent(instance, event),
+			isValidEvent(event),
 			"Unknown instance/event passed to Scheduler:insert(_, instance, event)"
 		)
 
@@ -768,7 +768,7 @@ function Scheduler:_addBuiltins()
 end
 
 function Scheduler:_scheduleEvent(instance, event)
-	local connect = utils.getConnectFunction(instance, event)
+	local connect = utils.getConnectFunction(event)
 	assert(
 		connect,
 		"Couldn't connect to event as no valid connect methods were found! Ensure the passed event has a 'Connect' or an 'on' method!"
